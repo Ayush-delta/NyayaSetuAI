@@ -1,0 +1,21 @@
+# Environments
+.env
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Data / Test files
+db/records.json
+*.pdf
+test_*.py
+
+# OS generated files
+.DS_Store
+Thumbs.db
