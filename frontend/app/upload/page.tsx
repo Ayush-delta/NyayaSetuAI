@@ -49,137 +49,55 @@ export default function UploadPage() {
     }
   };
 
-  const handleUpload = () => {
+  const handleUpload = async () => {
     if (!file) return;
 
     setIsUploading(true);
+    setProgress(0);
 
-    // Simulate upload progress
+    // Simulate upload progress while we wait for backend
     const interval = setInterval(() => {
       setProgress((prev) => {
         if (prev >= 90) {
           clearInterval(interval);
           return 90;
         }
-        return prev + 10;
+        return prev + 5;
       });
-    }, 300);
+    }, 1000);
 
-    // Simulate backend processing and response
-    setTimeout(() => {
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await fetch("http://127.0.0.1:8000/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || "Upload failed");
+      }
+
+      const responseData = await response.json();
+      
       clearInterval(interval);
       setProgress(100);
 
-      // Mock Response from backend based on user's JSON structure
-      const recordId = crypto.randomUUID();
-      const mockResponse = {
-        record_id: recordId,
-        message: "Judgment processed successfully",
-        is_scanned: false,
-        total_pages: 15,
-        chunks_created: 63,
-        processing_time_seconds: 20.97,
-        storage_url: null,
-        data: {
-          id: recordId,
-          filename: file.name,
-          storage_path: null,
-          signed_url: null,
-          file_hash: "6dc1fc1e6a1c689e740b5df191add900",
-          file_size: file.size.toString(),
-          extracted_data: {
-            case_details: {
-              case_number: "CRP.No.1346 of 2026",
-              court_name: "HIGH COURT",
-              date_of_order: "29-04-2026",
-              petitioner: "Ms.Venkata Aswini Reddy Koyya @ Ashu Reddy",
-              respondent: "Mr. Yenumula Satyanarayana Murthy and 32 others",
-              judge_name: null
-            },
-            judgment_metadata: {
-              judgment_type: "Civil Revision",
-              subject_matter: "Service Matter / Land / Contempt / etc",
-              relief_granted: "restraining the respondents",
-              is_interim_order: true,
-              has_contempt_risk: false,
-              related_case_numbers: [
-                "I.A.No.576 of 2026",
-                "O.S.No.176 of 2026"
-              ]
-            },
-            key_directions: [
-              "restraining the respondents",
-              "injunction"
-            ],
-            deadlines: [
-              "06.05.2026",
-              "06.07.2026"
-            ],
-            parties_involved: [
-              "Ms.Venkata Aswini Reddy Koyya @ Ashu Reddy",
-              "Mr. Yenumula Satyanarayana Murthy and 32 others"
-            ],
-            raw_text_snippet: "The instant Civil Revision Petition has been filed by the petitioner under Article 227 of the Constitution of India assailing the order dated 28.04.2026 in I.A.No.576 of 2026 in O.S.No.176 of 2026 passed by the XI Additional Chief Judge, City Civil Court, at Hyderabad, insofar as the Trial Court declined to grant ex parte ad interim injunction."
-          },
-          action_plan: {
-            action_type: "compliance",
-            action_required: "Comply with the order of the High Court dated 29-04-2026 in CRP.No.1346 of 2026.",
-            responsible_department: "Department of Law and Parliamentary Affairs",
-            secondary_departments: [
-              "Department of Revenue"
-            ],
-            priority: "high",
-            deadline: "06.05.2026",
-            limitation_period: null,
-            appeal_analysis: {
-              is_appeal_recommended: false,
-              limitation_days: null,
-              limitation_expiry_date: null,
-              appeal_court: null,
-              grounds_for_appeal: [],
-              risk_if_not_appealed: null
-            },
-            steps: [
-              "Review the order of the High Court and identify the specific directions to be complied with.",
-              "Notify the respondents of the order and ensure compliance with the restraining order.",
-              "File a compliance report with the High Court by the deadline of 06.05.2026."
-            ],
-            reasoning: "The High Court has passed an order dated 29-04-2026 in CRP.No.1346 of 2026, which requires compliance by the Department of Law and Parliamentary Affairs. The order is interim in nature and does not involve any contempt risk. The deadline for compliance is 06.05.2026, which is within 30 days, making it a high-priority action."
-          },
-          confidence_scores: {
-            case_details: 1,
-            judgment_metadata: 1,
-            key_directions: 1,
-            deadlines: 1,
-            action_type: 1,
-            responsible_department: 1,
-            overall: 1
-          },
-          compliance_tracking: {
-            compliance_status: "not_started",
-            updates: []
-          },
-          verification_status: "pending",
-          source_highlights: [
-            "restraining the respondents"
-          ],
-          is_scanned: false,
-          total_pages: "15",
-          processing_time: 20.97,
-          upload_timestamp: new Date().toISOString(),
-          vector_namespace: `record_${recordId}`
-        }
-      };
+      // Save the real backend response to localStorage so the edit page can use it
+      documentService.saveDocument(responseData);
 
-      // Save to localStorage
-      documentService.saveDocument(mockResponse as any);
-
-      // Redirect to edit page
       setTimeout(() => {
-        router.push(`/edit/${recordId}`);
+        router.push(`/edit/${responseData.record_id}`);
       }, 500);
 
-    }, 3000);
+    } catch (error: any) {
+      clearInterval(interval);
+      setIsUploading(false);
+      setProgress(0);
+      alert(`Error uploading document: ${error.message}`);
+    }
   };
 
   return (

@@ -23,6 +23,8 @@ Use null for string fields not found, but use [] for empty lists.
   }},
   "judgment_metadata": {{
     "judgment_type": "Writ Petition / Civil Revision / Criminal Appeal / etc",
+    "case_status": "Ongoing or Final Judgment",
+    "next_hearing_date": "DD-MM-YYYY or null",
     "subject_matter": "Service Matter / Land / Contempt / etc",
     "relief_granted": "what the court decided",
     "is_interim_order": true or false,

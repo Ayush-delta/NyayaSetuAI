@@ -41,6 +41,8 @@ class CaseDetails(BaseModel):
 
 class JudgmentMetadata(BaseModel):
     judgment_type: Optional[str] = None
+    case_status: Optional[str] = None
+    next_hearing_date: Optional[str] = None
     # e.g., Writ Petition, Civil Revision, Criminal Appeal
     subject_matter: Optional[str] = None
     # e.g., Service Matter, Land Acquisition, Contempt

@@ -24,6 +24,8 @@ export interface ProcessedDocument {
       };
       judgment_metadata: {
         judgment_type: string;
+        case_status: string | null;
+        next_hearing_date: string | null;
         subject_matter: string;
         relief_granted: string;
         is_interim_order: boolean;

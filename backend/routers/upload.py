@@ -25,7 +25,7 @@ async def upload_judgment(file: UploadFile = File(...)):
     if len(pdf_bytes) == 0:
         raise HTTPException(status_code=400, detail="Empty file received")
 
-    # Step 1: Check for duplicate
+    # Step 1: Check for duplicate (Temporarily disabled for testing)
     import hashlib
     file_hash = hashlib.md5(pdf_bytes).hexdigest()
     if check_duplicate(file_hash):

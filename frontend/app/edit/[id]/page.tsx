@@ -187,7 +187,7 @@ export default function EditPage() {
                   </label>
                   <input
                     type="text"
-                    value={case_details.case_number}
+                    value={case_details.case_number || ""}
                     onChange={(e) => handleNestedChange(["data", "extracted_data", "case_details", "case_number"], e.target.value)}
                     className="w-full rounded-lg border border-slate-300 bg-slate-50 p-3 text-slate-900 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
                   />
@@ -198,7 +198,7 @@ export default function EditPage() {
                   </label>
                   <input
                     type="text"
-                    value={case_details.court_name}
+                    value={case_details.court_name || ""}
                     onChange={(e) => handleNestedChange(["data", "extracted_data", "case_details", "court_name"], e.target.value)}
                     className="w-full rounded-lg border border-slate-300 bg-slate-50 p-3 text-slate-900 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
                   />
@@ -209,7 +209,7 @@ export default function EditPage() {
                   </label>
                   <input
                     type="text"
-                    value={case_details.date_of_order}
+                    value={case_details.date_of_order || ""}
                     onChange={(e) => handleNestedChange(["data", "extracted_data", "case_details", "date_of_order"], e.target.value)}
                     className="w-full rounded-lg border border-slate-300 bg-slate-50 p-3 text-slate-900 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
                   />
@@ -220,8 +220,30 @@ export default function EditPage() {
                   </label>
                   <input
                     type="text"
-                    value={data.extracted_data.judgment_metadata.judgment_type}
+                    value={data.extracted_data.judgment_metadata.judgment_type || ""}
                     onChange={(e) => handleNestedChange(["data", "extracted_data", "judgment_metadata", "judgment_type"], e.target.value)}
+                    className="w-full rounded-lg border border-slate-300 bg-slate-50 p-3 text-slate-900 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="flex items-center text-sm font-bold text-slate-700">
+                    Case Status {getConfidenceBadge("judgment_metadata")}
+                  </label>
+                  <input
+                    type="text"
+                    value={data.extracted_data.judgment_metadata.case_status || ""}
+                    onChange={(e) => handleNestedChange(["data", "extracted_data", "judgment_metadata", "case_status"], e.target.value)}
+                    className="w-full rounded-lg border border-slate-300 bg-slate-50 p-3 text-slate-900 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="flex items-center text-sm font-bold text-slate-700">
+                    Next Hearing Date {getConfidenceBadge("judgment_metadata")}
+                  </label>
+                  <input
+                    type="text"
+                    value={data.extracted_data.judgment_metadata.next_hearing_date || ""}
+                    onChange={(e) => handleNestedChange(["data", "extracted_data", "judgment_metadata", "next_hearing_date"], e.target.value)}
                     className="w-full rounded-lg border border-slate-300 bg-slate-50 p-3 text-slate-900 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
                   />
                 </div>
@@ -231,7 +253,7 @@ export default function EditPage() {
                   </label>
                   <input
                     type="text"
-                    value={case_details.petitioner}
+                    value={case_details.petitioner || ""}
                     onChange={(e) => handleNestedChange(["data", "extracted_data", "case_details", "petitioner"], e.target.value)}
                     className="w-full rounded-lg border border-slate-300 bg-slate-50 p-3 text-slate-900 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
                   />
@@ -242,7 +264,7 @@ export default function EditPage() {
                   </label>
                   <input
                     type="text"
-                    value={case_details.respondent}
+                    value={case_details.respondent || ""}
                     onChange={(e) => handleNestedChange(["data", "extracted_data", "case_details", "respondent"], e.target.value)}
                     className="w-full rounded-lg border border-slate-300 bg-slate-50 p-3 text-slate-900 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
                   />
@@ -259,7 +281,7 @@ export default function EditPage() {
                     </label>
                     <input
                       type="text"
-                      value={action_plan.action_type}
+                      value={action_plan.action_type || ""}
                       onChange={(e) => handleNestedChange(["data", "action_plan", "action_type"], e.target.value)}
                       className="w-full rounded-lg border border-slate-300 bg-slate-50 p-3 text-slate-900 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
                     />
@@ -270,7 +292,7 @@ export default function EditPage() {
                     </label>
                     <input
                       type="text"
-                      value={action_plan.responsible_department}
+                      value={action_plan.responsible_department || ""}
                       onChange={(e) => handleNestedChange(["data", "action_plan", "responsible_department"], e.target.value)}
                       className="w-full rounded-lg border border-slate-300 bg-slate-50 p-3 text-slate-900 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
                     />
@@ -281,7 +303,7 @@ export default function EditPage() {
                     Action Required {getConfidenceBadge("key_directions")}
                   </label>
                   <textarea
-                    value={action_plan.action_required}
+                    value={action_plan.action_required || ""}
                     onChange={(e) => handleNestedChange(["data", "action_plan", "action_required"], e.target.value)}
                     className="h-24 w-full rounded-lg border border-slate-300 bg-slate-50 p-3 text-slate-900 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
                   />
@@ -291,7 +313,7 @@ export default function EditPage() {
                     Reasoning {getConfidenceBadge("overall")}
                   </label>
                   <textarea
-                    value={action_plan.reasoning}
+                    value={action_plan.reasoning || ""}
                     onChange={(e) => handleNestedChange(["data", "action_plan", "reasoning"], e.target.value)}
                     className="h-32 w-full rounded-lg border border-slate-300 bg-slate-50 p-3 text-slate-900 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
                   />
