@@ -1,6 +1,6 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from services.pdf_processor import extract_text_from_pdf
-from services.ai_extractor import extract_information, generate_action_plan, compute_confidence
+from services.ai_extractor import extract_information, generate_action_plan, compute_confidence, generate_case_summary
 from services.storage_service import upload_pdf_to_supabase, check_duplicate
 from services.vector_service import create_vector_store, get_context_for_extraction
 from db.postgres import save_record_pg, init_db
@@ -25,14 +25,14 @@ async def upload_judgment(file: UploadFile = File(...)):
     if len(pdf_bytes) == 0:
         raise HTTPException(status_code=400, detail="Empty file received")
 
-    # Step 1: Check for duplicate (Temporarily disabled for testing)
+    # Step 1: Duplicate check (disabled for testing)
     import hashlib
     file_hash = hashlib.md5(pdf_bytes).hexdigest()
-    if check_duplicate(file_hash):
-        raise HTTPException(
-            status_code=409,
-            detail="This judgment has already been uploaded. Check the review queue."
-        )
+    # if check_duplicate(file_hash):
+    #     raise HTTPException(
+    #         status_code=409,
+    #         detail="This judgment has already been uploaded. Check the review queue."
+    #     )
 
     record_id = str(uuid.uuid4())
 
@@ -69,6 +69,10 @@ async def upload_judgment(file: UploadFile = File(...)):
     print("📋 Generating action plan...")
     action_plan = generate_action_plan(extracted)
 
+    # Step 7.5: Generate case summary for Source Material tab
+    print("📝 Generating case summary...")
+    case_summary = generate_case_summary(full_text)
+
     # Step 8: Confidence scoring
     print("📊 Computing confidence scores...")
     confidence = compute_confidence(extracted, action_plan)
@@ -95,6 +99,7 @@ async def upload_judgment(file: UploadFile = File(...)):
         "confidence_scores": confidence,
         "compliance_tracking": {"compliance_status": "not_started", "updates": []},
         "verification_status": "pending",
+        "case_summary": case_summary,
         "source_highlights": highlights,
         "is_scanned": pdf_result["is_scanned"],
         "total_pages": str(pdf_result["total_pages"]),

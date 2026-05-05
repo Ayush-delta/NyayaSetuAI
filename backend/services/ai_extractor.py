@@ -134,20 +134,99 @@ def generate_action_plan(extracted_data: dict) -> dict:
 
 def compute_confidence(extracted_data: dict, action_plan: dict) -> dict:
     """Get LLM self-assessed confidence scores."""
-    prompt = CONFIDENCE_PROMPT.format(
-        extracted_data=json.dumps(extracted_data, indent=2),
-        action_plan=json.dumps(action_plan, indent=2)
-    )
-    scores = call_llm(prompt)
-    # Compute overall as weighted average
+    
+    # Field completion rate — check what was actually extracted
+    case_details = extracted_data.get("case_details", {})
+    
+    case_fields = [
+        case_details.get("case_number"),
+        case_details.get("court_name"),
+        case_details.get("date_of_order"),
+        case_details.get("petitioner"),
+        case_details.get("respondent"),
+        case_details.get("judge_name"),
+    ]
+    filled_case = sum(1 for f in case_fields if f and f != "null" and f != "None")
+    case_score = round(filled_case / len(case_fields), 2)
+
+    directions = extracted_data.get("key_directions", [])
+    directions_score = 0.9 if len(directions) >= 3 else 0.6 if len(directions) >= 1 else 0.1
+
+    deadlines = extracted_data.get("deadlines", [])
+    deadlines_score = 0.9 if len(deadlines) >= 1 else 0.3
+
+    action_type = action_plan.get("action_type", "unclear")
+    action_score = 0.3 if action_type == "unclear" else 0.85
+
+    dept = action_plan.get("responsible_department", "")
+    dept_score = 0.85 if dept and dept != "null" and len(dept) > 3 else 0.2
+
+    # Try LLM self-assessment on top
+    try:
+        prompt = CONFIDENCE_PROMPT.format(
+            extracted_data=json.dumps(extracted_data, indent=2),
+            action_plan=json.dumps(action_plan, indent=2)
+        )
+        llm_scores = call_llm(prompt)
+        
+        # Blend rule-based + LLM scores (60% rule-based, 40% LLM)
+        final = {
+            "case_details": round(0.6 * case_score + 0.4 * float(llm_scores.get("case_details", case_score)), 2),
+            "key_directions": round(0.6 * directions_score + 0.4 * float(llm_scores.get("key_directions", directions_score)), 2),
+            "deadlines": round(0.6 * deadlines_score + 0.4 * float(llm_scores.get("deadlines", deadlines_score)), 2),
+            "action_type": round(0.6 * action_score + 0.4 * float(llm_scores.get("action_type", action_score)), 2),
+            "responsible_department": round(0.6 * dept_score + 0.4 * float(llm_scores.get("responsible_department", dept_score)), 2),
+        }
+    except Exception as e:
+        print(f"LLM confidence failed, using rule-based: {e}")
+        final = {
+            "case_details": case_score,
+            "key_directions": directions_score,
+            "deadlines": deadlines_score,
+            "action_type": action_score,
+            "responsible_department": dept_score,
+        }
+
     weights = {
-        "case_details": 0.2,
-        "judgment_metadata": 0.1,
-        "key_directions": 0.2,
-        "deadlines": 0.2,
-        "action_type": 0.2,
-        "responsible_department": 0.1
+        "case_details": 0.25,
+        "key_directions": 0.30,
+        "deadlines": 0.20,
+        "action_type": 0.15,
+        "responsible_department": 0.10
     }
-    overall = sum(scores.get(k, 0) * w for k, w in weights.items())
-    scores["overall"] = round(overall, 2)
-    return scores
+    final["overall"] = round(
+        sum(final[k] * w for k, w in weights.items()), 2
+    )
+    return final
+
+SUMMARY_PROMPT = """You are a legal analyst for the Karnataka government.
+Read this court judgment and write a clear, concise summary for a government officer.
+
+Write the summary in this exact structure:
+1. CASE OVERVIEW (2 sentences): What is this case about?
+2. COURT DECISION (2 sentences): What did the court decide?
+3. KEY DIRECTIONS (bullet points): What must the government do?
+4. CRITICAL DEADLINES: Any timeframes mentioned?
+5. RISK ASSESSMENT (1 sentence): What happens if the government does not act?
+
+Use plain English. Avoid legal jargon. Be specific and actionable.
+
+JUDGMENT TEXT:
+{text}
+"""
+
+def generate_case_summary(text: str) -> str:
+    """Generate a human-readable summary of the judgment."""
+    try:
+        truncated = text[:5000]
+        prompt = SUMMARY_PROMPT.format(text=truncated)
+        response = client.chat.completions.create(
+            model=MODEL,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.2,
+            max_tokens=800
+        )
+        return response.choices[0].message.content.strip()
+    except Exception as e:
+        print(f"Summary generation failed: {e}")
+        return "Summary could not be generated."

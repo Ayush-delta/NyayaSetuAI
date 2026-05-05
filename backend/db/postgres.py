@@ -59,6 +59,9 @@ class JudgmentRecordDB(Base):
     reviewed_by = Column(String, nullable=True)
     reviewed_at = Column(DateTime, nullable=True)
     
+    # AI Summary
+    case_summary = Column(Text, nullable=True)
+    
     # Source highlights
     source_highlights = Column(JSON, nullable=True)
     

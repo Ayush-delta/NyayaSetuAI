@@ -13,7 +13,7 @@ export default function EditPage() {
 
   const [document, setDocument] = useState<ProcessedDocument | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [activeTab, setActiveTab] = useState("case"); // 'case', 'action', 'raw'
+  const [activeTab, setActiveTab] = useState("case");
 
   useEffect(() => {
     if (id) {
@@ -27,7 +27,7 @@ export default function EditPage() {
     }
   }, [id, router]);
 
-  const handleAction = (action: "approved" | "rejected" | "pending") => {
+  const handleAction = async (action: "approved" | "rejected" | "pending") => {
     if (!document) return;
     setIsProcessing(true);
 
@@ -39,12 +39,70 @@ export default function EditPage() {
       }
     };
 
-    // Simulate network delay
-    setTimeout(() => {
+    try {
+      const response = await fetch(`http://127.0.0.1:8000/api/records/${id}/verify`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          status: action,
+          reviewer_notes: reviewerNotes || null,
+          reviewed_by: "government_officer",
+          edited_action_plan: action === "approved" ? document.data.action_plan : null,
+        }),
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.detail || "Failed to save");
+      }
+
       documentService.saveDocument(updatedDoc);
       setIsProcessing(false);
       router.push("/dashboard");
-    }, 1000);
+    } catch (error: any) {
+      console.error("Verification error:", error);
+      documentService.saveDocument(updatedDoc);
+      setIsProcessing(false);
+      router.push("/dashboard");
+    }
+  };
+
+  const [reviewerNotes, setReviewerNotes] = useState("");
+  const [saveMessage, setSaveMessage] = useState("");
+
+  const handleSaveEdits = async () => {
+    if (!document) return;
+    setIsProcessing(true);
+    setSaveMessage("");
+
+    try {
+      const response = await fetch(`http://127.0.0.1:8000/api/records/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          extracted_data: document.data.extracted_data,
+          action_plan: document.data.action_plan,
+          reviewer_notes: reviewerNotes || null,
+          reviewed_by: "government_officer",
+        }),
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.detail || "Failed to save edits");
+      }
+
+      documentService.saveDocument(document);
+      setSaveMessage("✅ All edits saved successfully!");
+      setTimeout(() => setSaveMessage(""), 3000);
+    } catch (error: any) {
+      console.error("Save error:", error);
+      documentService.saveDocument(document);
+      setSaveMessage("⚠️ Saved locally. Backend sync failed.");
+      setTimeout(() => setSaveMessage(""), 3000);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const handleNestedChange = (path: string[], value: any) => {
@@ -123,6 +181,14 @@ export default function EditPage() {
                 Reject
               </button>
               <button
+                onClick={handleSaveEdits}
+                disabled={isProcessing}
+                className="flex items-center gap-2 rounded-lg border border-blue-300 bg-blue-50 px-4 py-2.5 text-sm font-bold text-blue-700 transition-colors hover:bg-blue-100 disabled:opacity-50"
+              >
+                <Save size={18} />
+                Save All Edits
+              </button>
+              <button
                 onClick={() => handleAction("pending")}
                 disabled={isProcessing}
                 className="flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-50"
@@ -144,6 +210,17 @@ export default function EditPage() {
               </button>
             </div>
           </div>
+
+          {/* Save Message Toast */}
+          {saveMessage && (
+            <div className={`mb-4 rounded-lg p-3 text-sm font-medium ${
+              saveMessage.startsWith("✅") 
+                ? "border border-emerald-200 bg-emerald-50 text-emerald-700" 
+                : "border border-yellow-200 bg-yellow-50 text-yellow-700"
+            }`}>
+              {saveMessage}
+            </div>
+          )}
 
           {/* Alert Banner */}
           <div className="mb-6 flex items-start gap-3 rounded-xl border border-blue-200 bg-blue-50 p-4 text-blue-800">
@@ -269,6 +346,41 @@ export default function EditPage() {
                     className="w-full rounded-lg border border-slate-300 bg-slate-50 p-3 text-slate-900 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
                   />
                 </div>
+                <div className="space-y-2 sm:col-span-2">
+                  <label className="flex items-center text-sm font-bold text-slate-700">
+                    Judge Name {getConfidenceBadge("case_details")}
+                  </label>
+                  <input
+                    type="text"
+                    value={case_details.judge_name || ""}
+                    onChange={(e) => handleNestedChange(["data", "extracted_data", "case_details", "judge_name"], e.target.value)}
+                    className="w-full rounded-lg border border-slate-300 bg-slate-50 p-3 text-slate-900 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                </div>
+                <div className="space-y-2 sm:col-span-2">
+                  <label className="flex items-center text-sm font-bold text-slate-700">
+                    Key Directions {getConfidenceBadge("key_directions")}
+                  </label>
+                  <textarea
+                    value={(data.extracted_data.key_directions || []).join("\n")}
+                    onChange={(e) => handleNestedChange(["data", "extracted_data", "key_directions"], e.target.value.split("\n").filter((s: string) => s.trim()))}
+                    placeholder="One direction per line"
+                    className="h-24 w-full rounded-lg border border-slate-300 bg-slate-50 p-3 text-slate-900 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                  <p className="text-xs text-slate-400">Enter one direction per line</p>
+                </div>
+                <div className="space-y-2 sm:col-span-2">
+                  <label className="flex items-center text-sm font-bold text-slate-700">
+                    Deadlines {getConfidenceBadge("deadlines")}
+                  </label>
+                  <textarea
+                    value={(data.extracted_data.deadlines || []).join("\n")}
+                    onChange={(e) => handleNestedChange(["data", "extracted_data", "deadlines"], e.target.value.split("\n").filter((s: string) => s.trim()))}
+                    placeholder="One deadline per line"
+                    className="h-20 w-full rounded-lg border border-slate-300 bg-slate-50 p-3 text-slate-900 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                  <p className="text-xs text-slate-400">Enter one deadline per line</p>
+                </div>
               </div>
             )}
 
@@ -343,20 +455,111 @@ export default function EditPage() {
                     ))}
                   </div>
                 </div>
+
+                {/* Priority & Deadline */}
+                <div className="grid gap-6 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-slate-700">Priority</label>
+                    <select
+                      value={action_plan.priority || "medium"}
+                      onChange={(e) => handleNestedChange(["data", "action_plan", "priority"], e.target.value)}
+                      className="w-full rounded-lg border border-slate-300 bg-slate-50 p-3 text-slate-900 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    >
+                      <option value="urgent">🔴 Urgent</option>
+                      <option value="high">🟠 High</option>
+                      <option value="medium">🟡 Medium</option>
+                      <option value="low">🟢 Low</option>
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-slate-700">Deadline</label>
+                    <input
+                      type="text"
+                      value={action_plan.deadline || ""}
+                      onChange={(e) => handleNestedChange(["data", "action_plan", "deadline"], e.target.value)}
+                      className="w-full rounded-lg border border-slate-300 bg-slate-50 p-3 text-slate-900 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Reviewer Notes */}
+                <div className="space-y-2 rounded-xl border border-amber-200 bg-amber-50 p-5">
+                  <label className="text-sm font-bold text-amber-800">📝 Reviewer Notes</label>
+                  <textarea
+                    value={reviewerNotes}
+                    onChange={(e) => setReviewerNotes(e.target.value)}
+                    placeholder="Add any observations, corrections, or comments for the audit trail..."
+                    className="h-24 w-full rounded-lg border border-amber-300 bg-white p-3 text-slate-900 placeholder:text-amber-300 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                  />
+                </div>
               </div>
             )}
 
             {activeTab === "raw" && (
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 rounded-lg bg-blue-50 border border-blue-100 p-4 text-blue-800">
-                  <CheckCircle2 size={20} className="text-blue-600" />
-                  <span className="text-sm font-medium">Raw text snippet extracted from the uploaded document for verification.</span>
+              <div className="space-y-6">
+
+                {/* AI Generated Summary */}
+                {(data as any).case_summary && (
+                  <div className="rounded-xl border border-slate-100 bg-white p-6 shadow-sm">
+                    <h3 className="mb-4 font-semibold text-slate-800">
+                      🤖 AI Case Summary
+                    </h3>
+                    <div className="prose prose-sm max-w-none">
+                      {(data as any).case_summary.split('\n').map((line: string, i: number) => {
+                        if (/^\d\./.test(line)) {
+                          return (
+                            <p key={i} className="mb-1 mt-4 font-bold text-blue-900">
+                              {line}
+                            </p>
+                          );
+                        }
+                        if (line.startsWith('-') || line.startsWith('•')) {
+                          return (
+                            <div key={i} className="mb-1 ml-4 flex gap-2 text-sm text-slate-700">
+                              <span className="mt-0.5 text-blue-500">→</span>
+                              <span>{line.replace(/^[-•]\s*/, '')}</span>
+                            </div>
+                          );
+                        }
+                        return line.trim() ? (
+                          <p key={i} className="mb-2 text-sm text-slate-700">{line}</p>
+                        ) : <br key={i} />;
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Source Highlights */}
+                <div className="rounded-xl border border-slate-100 bg-white p-6 shadow-sm">
+                  <h3 className="mb-2 font-semibold text-slate-800">🔦 Extracted Source Text</h3>
+                  <p className="mb-4 text-xs text-slate-400">
+                    Direct quotes from the original judgment PDF
+                  </p>
+                  {data.source_highlights && data.source_highlights.length > 0 ? (
+                    data.source_highlights.map((h: string, i: number) => (
+                      <div
+                        key={i}
+                        className="mb-3 rounded border-l-4 border-yellow-400 bg-yellow-50 px-4 py-3 text-sm italic text-slate-700"
+                      >
+                        &ldquo;{h}&rdquo;
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-sm text-slate-400">No source highlights available</p>
+                  )}
                 </div>
-                <textarea
-                  value={data.extracted_data.raw_text_snippet}
-                  readOnly
-                  className="h-64 w-full rounded-lg border border-slate-300 bg-slate-50 p-4 font-mono text-sm leading-relaxed text-slate-600 focus:outline-none"
-                />
+
+                {/* Raw Text Snippet */}
+                {data.extracted_data?.raw_text_snippet && (
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
+                    <h3 className="mb-3 font-semibold text-slate-700">
+                      📄 Original Text Snippet
+                    </h3>
+                    <p className="whitespace-pre-wrap font-mono text-sm leading-relaxed text-slate-600">
+                      {data.extracted_data.raw_text_snippet}
+                    </p>
+                  </div>
+                )}
               </div>
             )}
           </div>

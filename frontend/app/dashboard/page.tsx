@@ -61,7 +61,63 @@ export default function DashboardPage() {
             />
           </div>
 
-          {/* Documents Grid */}
+          {/* Review Queue — Pending & Edited documents */}
+          {(() => {
+            const pendingDocs = documents.filter((doc) =>
+              ["pending", "edited"].includes(doc.data.verification_status)
+            );
+            if (pendingDocs.length === 0) return null;
+            return (
+              <div className="mb-12">
+                <h2 className="mb-4 flex items-center gap-2 text-xl font-bold text-slate-800">
+                  <Clock size={20} className="text-amber-500" />
+                  Review Queue
+                  <span className="ml-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-amber-100 text-xs font-bold text-amber-700 border border-amber-200">
+                    {pendingDocs.length}
+                  </span>
+                </h2>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {pendingDocs.map((doc) => {
+                    const { case_details } = doc.data.extracted_data;
+                    const { action_plan } = doc.data;
+                    const statusLabel = doc.data.verification_status === "edited" ? "Edited" : "Pending Review";
+                    const statusColor = doc.data.verification_status === "edited"
+                      ? "bg-blue-50 text-blue-700 border-blue-200"
+                      : "bg-amber-50 text-amber-700 border-amber-200";
+
+                    return (
+                      <div
+                        key={doc.record_id}
+                        onClick={() => router.push(`/edit/${doc.record_id}`)}
+                        className="group cursor-pointer rounded-xl border-2 border-dashed border-amber-300 bg-white p-5 transition-all hover:border-amber-400 hover:shadow-md"
+                      >
+                        <div className="mb-3 flex items-center justify-between">
+                          <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase border ${statusColor}`}>
+                            {statusLabel}
+                          </span>
+                          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase border ${
+                            action_plan.priority === "urgent" ? "bg-red-50 text-red-700 border-red-200" :
+                            action_plan.priority === "high" ? "bg-orange-50 text-orange-700 border-orange-200" :
+                            "bg-slate-50 text-slate-600 border-slate-200"
+                          }`}>
+                            {action_plan.priority}
+                          </span>
+                        </div>
+                        <h3 className="mb-1 text-sm font-bold text-slate-900 truncate">{doc.data.filename}</h3>
+                        <p className="mb-2 text-xs text-slate-500">{case_details?.case_number || "No case number"} • {case_details?.court_name || "Unknown court"}</p>
+                        <p className="text-xs text-slate-600 line-clamp-2">{action_plan.action_required}</p>
+                        <div className="mt-3 flex items-center gap-1 text-xs font-bold text-amber-600 opacity-0 transition-opacity group-hover:opacity-100">
+                          Continue Review <ChevronRight size={14} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Approved Documents */}
           {filteredDocs.length > 0 ? (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {filteredDocs.map((doc, index) => {
@@ -82,7 +138,7 @@ export default function DashboardPage() {
                           Department
                         </div>
                         <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide border ${
-                          action_plan.priority === "high" ? "bg-red-50 text-red-700 border-red-200" : "bg-emerald-50 text-emerald-700 border-emerald-200"
+                          action_plan.priority === "high" || action_plan.priority === "urgent" ? "bg-red-50 text-red-700 border-red-200" : "bg-emerald-50 text-emerald-700 border-emerald-200"
                         }`}>
                           {action_plan.priority} Priority
                         </span>
