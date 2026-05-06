@@ -144,7 +144,4 @@ async def upload_judgment(file: UploadFile = File(...)):
         "storage_url": storage_result.get("signed_url"),
         "data": record_data
     }
-
-@router.on_event("startup")
-async def startup():
-    init_db()
+
