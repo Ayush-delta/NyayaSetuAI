@@ -12,29 +12,57 @@ EXTRACTION_PROMPT = """You are a legal document analyst for the Karnataka govern
 Analyze this court judgment and extract the following. Respond ONLY in valid JSON.
 Use null for string fields not found, but use [] for empty lists.
 
+CRITICAL EXTRACTION RULES:
+1. JUDGE NAME: Look for these exact patterns in the text:
+   - "HEMANT GUPTA, J." → extract "Hemant Gupta"
+   - "HON'BLE MR. JUSTICE [NAME]" → extract the name
+   - "CORAM: [NAME] AND [NAME], JJ." → extract both names
+   - "Before Hon'ble..." → extract name after this
+   - Lines ending in ", J." or ", JJ." always contain judge names
+   - Look especially near the word "JUDGMENT" or "J U D G M E N T"
+
+2. CASE NUMBER: May appear as:
+   - "W.P. No.", "WP No.", "CIVIL APPEAL NO.", "SLP (CIVIL) NO."
+   - Take the FIRST/PRIMARY case number only
+
+3. PETITIONER/RESPONDENT:
+   - Look for ".....APPELLANT(S)" or ".....PETITIONER(S)" above it
+   - Look for ".....RESPONDENT(S)" above the respondent name
+   - May also appear as "VERSUS" separator
+
+4. DATE OF ORDER:
+   - Look for "dated", "this day of", "pronounced on"
+   - Also check digital signature dates
+   - Format as DD-MM-YYYY
+
+5. COURT NAME: Look for "IN THE SUPREME COURT", "HIGH COURT OF KARNATAKA", etc.
+
 {{
   "case_details": {{
-    "case_number": "...",
-    "court_name": "...",
+    "case_number": "primary case number only",
+    "court_name": "full court name",
     "date_of_order": "DD-MM-YYYY or null",
-    "petitioner": "...",
-    "respondent": "...",
-    "judge_name": "..."
+    "petitioner": "first petitioner name",
+    "respondent": "first respondent name",
+    "judge_name": "full judge name(s) - LOOK NEAR 'JUDGMENT' HEADING"
   }},
   "judgment_metadata": {{
-    "judgment_type": "Writ Petition / Civil Revision / Criminal Appeal / etc",
+    "judgment_type": "Writ Petition / Civil Appeal / SLP / Criminal Appeal / etc",
     "case_status": "Ongoing or Final Judgment",
     "next_hearing_date": "DD-MM-YYYY or null",
-    "subject_matter": "Service Matter / Land / Contempt / etc",
-    "relief_granted": "what the court decided",
+    "subject_matter": "e.g. Education / Service Matter / Land / Fundamental Rights",
+    "relief_granted": "what the court decided in one sentence",
     "is_interim_order": true or false,
     "has_contempt_risk": true or false,
-    "related_case_numbers": []
+    "related_case_numbers": ["list other case numbers mentioned"]
   }},
-  "key_directions": ["direction 1", "direction 2"],
-  "deadlines": ["deadline with timeframe"],
-  "parties_involved": ["party 1", "party 2"],
-  "raw_text_snippet": "most relevant 2-3 sentences"
+  "key_directions": [
+    "specific direction 1 given by court",
+    "specific direction 2 given by court"
+  ],
+  "deadlines": ["any timeframe or deadline mentioned e.g. within 4 weeks"],
+  "parties_involved": ["petitioner", "respondent", "other parties"],
+  "raw_text_snippet": "copy the 2-3 most important sentences from the judgment verbatim"
 }}
 
 JUDGMENT TEXT:

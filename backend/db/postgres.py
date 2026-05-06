@@ -78,9 +78,9 @@ def init_db():
     """Create all tables. Logs a warning if DB is unreachable instead of crashing."""
     try:
         Base.metadata.create_all(bind=_get_engine())
-        print("✅ PostgreSQL tables ready")
+        print("[OK] PostgreSQL tables ready")
     except Exception as e:
-        print(f"⚠️  PostgreSQL unavailable at startup: {e}")
+        print(f"[WARN] PostgreSQL unavailable at startup: {e}")
         print("   Server will still start. DB calls will fail until connection is restored.")
 
 def get_db():

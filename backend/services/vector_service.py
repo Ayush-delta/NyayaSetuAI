@@ -1,88 +1,90 @@
 import os
-import faiss
-import pickle
-import numpy as np
 from sentence_transformers import SentenceTransformer
 from services.pdf_processor import chunk_text
+from services.storage_service import _get_client
 from dotenv import load_dotenv
 
 load_dotenv()
 
-VECTOR_STORE_DIR = "vector_store"
-os.makedirs(VECTOR_STORE_DIR, exist_ok=True)
-
-# Load embedding model once
+# ─── Embedding Model ──────────────────────────────────────────────────────
 print("Loading embedding model...")
 embedder = SentenceTransformer("all-MiniLM-L6-v2")
-EMBEDDING_DIM = 384
+
 
 def create_vector_store(record_id: str, full_text: str) -> dict:
     """
-    Chunk text, embed it, and save a FAISS index per record.
+    Chunk text, embed it, and store in Supabase pgvector.
     Returns metadata about the vector store.
     """
     # Step 1: Chunk the text
     chunks = chunk_text(full_text, chunk_size=500, overlap=100)
-    
+
     if not chunks:
         return {"chunks": 0, "namespace": None}
-    
+
     # Step 2: Embed chunks
-    embeddings = embedder.encode(chunks, show_progress_bar=False)
-    embeddings = np.array(embeddings).astype("float32")
+    embeddings = embedder.encode(chunks, show_progress_bar=False).tolist()
+
+    # Step 3: Connect to Supabase
+    supabase = _get_client()
+
+    # Delete existing chunks if re-processing
+    try:
+        supabase.table("document_chunks").delete().eq("record_id", record_id).execute()
+    except Exception as e:
+        print(f"Warning: could not delete old chunks: {e}")
+
+    # Step 4: Add chunks to pgvector
+    records_to_insert = []
+    for i, chunk in enumerate(chunks):
+        records_to_insert.append({
+            "record_id": record_id,
+            "chunk_index": i,
+            "content": chunk,
+            "embedding": embeddings[i]
+        })
     
-    # Step 3: Create FAISS index
-    index = faiss.IndexFlatL2(EMBEDDING_DIM)
-    index.add(embeddings)
-    
-    # Step 4: Save index + chunks to disk (one per record)
-    namespace = f"record_{record_id}"
-    index_path = os.path.join(VECTOR_STORE_DIR, f"{namespace}.index")
-    chunks_path = os.path.join(VECTOR_STORE_DIR, f"{namespace}.chunks")
-    
-    faiss.write_index(index, index_path)
-    with open(chunks_path, "wb") as f:
-        pickle.dump(chunks, f)
-    
+    supabase.table("document_chunks").insert(records_to_insert).execute()
+
     return {
         "chunks": len(chunks),
-        "namespace": namespace,
-        "index_path": index_path
+        "namespace": f"record_{record_id}",
     }
+
 
 def retrieve_relevant_chunks(record_id: str, query: str, top_k: int = 5) -> list:
     """
-    Given a query, retrieve the top_k most relevant chunks from the record's vector store.
-    Used to give Llama 3 focused context instead of the full text.
+    Given a query, retrieve the top_k most relevant chunks from the record's
+    pgvector table using the match_document_chunks RPC function.
     """
-    namespace = f"record_{record_id}"
-    index_path = os.path.join(VECTOR_STORE_DIR, f"{namespace}.index")
-    chunks_path = os.path.join(VECTOR_STORE_DIR, f"{namespace}.chunks")
+    # Embed the query
+    query_embedding = embedder.encode(query).tolist()
     
-    if not os.path.exists(index_path):
-        return []
-    
-    # Load index and chunks
-    index = faiss.read_index(index_path)
-    with open(chunks_path, "rb") as f:
-        chunks = pickle.load(f)
-    
-    # Embed query
-    query_embedding = embedder.encode([query]).astype("float32")
-    
-    # Search
-    distances, indices = index.search(query_embedding, top_k)
-    
-    # Return relevant chunks
-    results = []
-    for i, idx in enumerate(indices[0]):
-        if idx < len(chunks):
-            results.append({
-                "chunk": chunks[idx],
-                "score": float(distances[0][i])
+    supabase = _get_client()
+
+    try:
+        # Call the Supabase RPC function for cosine similarity search
+        response = supabase.rpc(
+            "match_document_chunks",
+            {
+                "query_embedding": query_embedding,
+                "match_threshold": 0.0,  # return everything, limit by match_count
+                "match_count": top_k,
+                "filter_record_id": record_id
+            }
+        ).execute()
+
+        chunks = []
+        for row in response.data:
+            chunks.append({
+                "chunk": row["content"],
+                "score": float(row["similarity"])
             })
-    
-    return results
+        return chunks
+    except Exception as e:
+        print(f"Error querying pgvector: {e}")
+        return []
+
 
 def get_context_for_extraction(record_id: str) -> str:
     """
@@ -95,15 +97,15 @@ def get_context_for_extraction(record_id: str) -> str:
         "appeal limitation period filing",
         "responsible department government action required"
     ]
-    
+
     seen = set()
     all_chunks = []
-    
+
     for query in queries:
         chunks = retrieve_relevant_chunks(record_id, query, top_k=3)
         for c in chunks:
             if c["chunk"] not in seen:
                 seen.add(c["chunk"])
                 all_chunks.append(c["chunk"])
-    
+
     return "\n\n---\n\n".join(all_chunks[:8])

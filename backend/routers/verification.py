@@ -1,8 +1,9 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from typing import Optional
 from db.postgres import get_record_pg, get_all_records_pg, update_record_pg
 from datetime import datetime
+from services.dependencies import require_admin
 
 router = APIRouter(prefix="/api", tags=["verification"])
 
@@ -19,7 +20,11 @@ class EditRecordRequest(BaseModel):
     reviewed_by: Optional[str] = None
 
 @router.put("/records/{record_id}")
-async def update_record_full(record_id: str, request: EditRecordRequest):
+async def update_record_full(
+    record_id: str,
+    request: EditRecordRequest,
+    current_user: dict = Depends(require_admin)
+):
     """Save all edits made by a government agent to a record."""
     record = get_record_pg(record_id)
     if not record:
@@ -27,7 +32,7 @@ async def update_record_full(record_id: str, request: EditRecordRequest):
 
     updates = {
         "verification_status": "edited",
-        "reviewed_by": request.reviewed_by or "government_officer",
+        "reviewed_by": request.reviewed_by or current_user.get("username", "government_officer"),
         "reviewed_at": datetime.utcnow(),
     }
     if request.extracted_data:
@@ -44,18 +49,27 @@ async def update_record_full(record_id: str, request: EditRecordRequest):
     }
 
 @router.get("/records/{record_id}")
-async def get_record_detail(record_id: str):
+async def get_record_detail(
+    record_id: str,
+    current_user: dict = Depends(require_admin)
+):
     record = get_record_pg(record_id)
     if not record:
         raise HTTPException(status_code=404, detail="Record not found")
     return record
 
 @router.get("/records")
-async def list_all_records():
+async def list_all_records(
+    current_user: dict = Depends(require_admin)
+):
     return get_all_records_pg()
 
 @router.post("/records/{record_id}/verify")
-async def verify_record(record_id: str, request: VerificationRequest):
+async def verify_record(
+    record_id: str,
+    request: VerificationRequest,
+    current_user: dict = Depends(require_admin)
+):
     record = get_record_pg(record_id)
     if not record:
         raise HTTPException(status_code=404, detail="Record not found")
@@ -63,7 +77,7 @@ async def verify_record(record_id: str, request: VerificationRequest):
     updates = {
         "verification_status": request.status,
         "reviewer_notes": request.reviewer_notes,
-        "reviewed_by": request.reviewed_by or "government_officer",
+        "reviewed_by": request.reviewed_by or current_user.get("username", "government_officer"),
         "reviewed_at": datetime.utcnow()
     }
 

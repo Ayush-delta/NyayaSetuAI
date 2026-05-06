@@ -1,11 +1,15 @@
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, Depends
 from db.postgres import get_verified_records_pg
 from typing import Optional
+from services.dependencies import require_any_role
 
 router = APIRouter(prefix="/api", tags=["dashboard"])
 
 @router.get("/dashboard")
-async def get_dashboard(department: Optional[str] = Query(None)):
+async def get_dashboard(
+    department: Optional[str] = Query(None),
+    current_user: dict = Depends(require_any_role)
+):
     records = get_verified_records_pg(department)
 
     total = len(records)

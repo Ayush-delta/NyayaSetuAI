@@ -16,6 +16,7 @@ db/records.json
 *.pdf
 test_*.py
 vector_store/
+chroma_data/
 
 # OS generated files
 .DS_Store

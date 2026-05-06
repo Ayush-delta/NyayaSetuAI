@@ -1,5 +1,5 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException
-from services.pdf_processor import extract_text_from_pdf
+from services.pdf_processor import extract_text_from_pdf, extract_case_metadata
 from services.ai_extractor import extract_information, generate_action_plan, compute_confidence, generate_case_summary
 from services.storage_service import upload_pdf_to_supabase, check_duplicate
 from services.vector_service import create_vector_store, get_context_for_extraction
@@ -8,6 +8,17 @@ from models.schemas import VerificationStatus
 from datetime import datetime
 import uuid
 import time
+from services.dependencies import require_admin
+from fastapi import Depends
+
+router = APIRouter(prefix="/api", tags=["upload"])
+
+@router.post("/upload")
+async def upload_judgment(
+    file: UploadFile = File(...),
+    current_user: dict = Depends(require_admin)  # ← add this
+):
+    ...
 
 router = APIRouter(prefix="/api", tags=["upload"])
 
@@ -28,11 +39,11 @@ async def upload_judgment(file: UploadFile = File(...)):
     # Step 1: Duplicate check (disabled for testing)
     import hashlib
     file_hash = hashlib.md5(pdf_bytes).hexdigest()
-    # if check_duplicate(file_hash):
-    #     raise HTTPException(
-    #         status_code=409,
-    #         detail="This judgment has already been uploaded. Check the review queue."
-    #     )
+    if check_duplicate(file_hash):
+        raise HTTPException(
+            status_code=409,
+            detail="This judgment has already been uploaded. Check the review queue."
+        )
 
     record_id = str(uuid.uuid4())
 
@@ -53,6 +64,10 @@ async def upload_judgment(file: UploadFile = File(...)):
     if not full_text or len(full_text) < 100:
         raise HTTPException(status_code=422, detail="Could not extract text from PDF")
 
+    # Rule-based pre-extraction (runs before LLM)
+    rule_based = extract_case_metadata(full_text)
+    print(f"📌 Rule-based extraction: {rule_based}")
+
     # Step 4: Create vector store (chunking + embeddings)
     print("🔢 Creating vector embeddings...")
     vector_result = create_vector_store(record_id, full_text)
@@ -64,6 +79,15 @@ async def upload_judgment(file: UploadFile = File(...)):
     # Step 6: AI extraction
     print("🤖 Running AI extraction...")
     extracted = extract_information(context_text)
+
+    # Merge rule-based into LLM output — rule-based wins for judge name
+    if rule_based.get("judge_name"):
+        if not extracted.get("case_details"):
+            extracted["case_details"] = {}
+        if not extracted["case_details"].get("judge_name") or \
+           extracted["case_details"]["judge_name"] in [None, "null", ""]:
+            extracted["case_details"]["judge_name"] = rule_based["judge_name"]
+            print(f"✅ Judge name corrected to: {rule_based['judge_name']}")
 
     # Step 7: Action plan
     print("📋 Generating action plan...")

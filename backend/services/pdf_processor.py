@@ -1,4 +1,5 @@
 import fitz  # PyMuPDF
+import re
 import pytesseract
 from PIL import Image
 import io
@@ -56,3 +57,56 @@ def chunk_text(text: str, chunk_size: int = 2000, overlap: int = 200) -> list:
         chunks.append(text[start:end])
         start += chunk_size - overlap
     return chunks
+
+def extract_judge_name(text: str) -> str:
+    """
+    Rule-based judge name extraction using regex patterns.
+    More reliable than LLM for structured header fields.
+    """
+    patterns = [
+        # "HEMANT GUPTA, J." or "HEMANT GUPTA AND SUDHANSHU DHULIA, JJ."
+        r'([A-Z][A-Z\s\.]+),\s*J{1,2}\.',
+        # "HON'BLE MR. JUSTICE HEMANT GUPTA"
+        r"HON[''']BLE\s+(?:MR\.|MS\.|MRS\.)?\s*JUSTICE\s+([A-Z][A-Za-z\s\.]+)",
+        # "CORAM: HEMANT GUPTA, J"
+        r'CORAM\s*:\s*([A-Z][A-Z\s\.]+),?\s*J{1,2}',
+        # "Before Hon'ble Mr. Justice"
+        r"Before\s+Hon[''']ble\s+(?:Mr\.|Ms\.)?\s*Justice\s+([A-Za-z\s\.]+)",
+    ]
+
+    for pattern in patterns:
+        matches = re.findall(pattern, text[:10000])  # search first 10000 chars
+        if matches:
+            # Clean up the match
+            name = matches[0].strip()
+            # Title case and remove extra spaces
+            name = ' '.join(name.title().split())
+            if len(name) > 3:  # filter out false positives
+                return name
+
+    return None
+
+def extract_case_metadata(text: str) -> dict:
+    """
+    Rule-based extraction of key metadata fields.
+    Used to supplement/correct LLM output.
+    """
+    metadata = {}
+
+    # Judge name
+    judge = extract_judge_name(text)
+    if judge:
+        metadata["judge_name"] = judge
+
+    # Date patterns
+    date_patterns = [
+        r'(\d{1,2})[./\-](\d{1,2})[./\-](\d{4})',
+        r'(\d{1,2})\s+(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{4})',
+    ]
+    for pattern in date_patterns:
+        match = re.search(pattern, text[:5000])
+        if match:
+            metadata["date_hint"] = match.group(0)
+            break
+
+    return metadata
