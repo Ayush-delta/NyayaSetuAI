@@ -6,9 +6,16 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# ─── Embedding Model ──────────────────────────────────────────────────────
-print("Loading embedding model...")
-embedder = SentenceTransformer("all-MiniLM-L6-v2")
+# ─── Embedding Model (Lazy Loaded) ────────────────────────────────────────
+_embedder = None
+
+def get_embedder():
+    global _embedder
+    if _embedder is None:
+        print("🚀 Loading lightweight embedding model...")
+        # We use the small model to keep memory usage low
+        _embedder = SentenceTransformer("all-MiniLM-L6-v2", device="cpu")
+    return _embedder
 
 
 def create_vector_store(record_id: str, full_text: str) -> dict:
@@ -23,7 +30,7 @@ def create_vector_store(record_id: str, full_text: str) -> dict:
         return {"chunks": 0, "namespace": None}
 
     # Step 2: Embed chunks
-    embeddings = embedder.encode(chunks, show_progress_bar=False).tolist()
+    embeddings = get_embedder().encode(chunks, show_progress_bar=False).tolist()
 
     # Step 3: Connect to Supabase
     supabase = _get_client()
@@ -58,7 +65,7 @@ def retrieve_relevant_chunks(record_id: str, query: str, top_k: int = 5) -> list
     pgvector table using the match_document_chunks RPC function.
     """
     # Embed the query
-    query_embedding = embedder.encode(query).tolist()
+    query_embedding = get_embedder().encode(query).tolist()
     
     supabase = _get_client()
 

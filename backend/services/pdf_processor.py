@@ -8,7 +8,12 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-TESSERACT_PATH = os.getenv("TESSERACT_PATH", r"C:\Program Files\Tesseract-OCR\tesseract.exe")
+import platform
+
+TESSERACT_PATH = os.getenv("TESSERACT_PATH")
+if not TESSERACT_PATH:
+    TESSERACT_PATH = r"C:\Program Files\Tesseract-OCR\tesseract.exe" if platform.system() == "Windows" else "/usr/bin/tesseract"
+
 pytesseract.pytesseract.tesseract_cmd = TESSERACT_PATH
 
 def extract_text_from_pdf(pdf_bytes: bytes) -> dict:
