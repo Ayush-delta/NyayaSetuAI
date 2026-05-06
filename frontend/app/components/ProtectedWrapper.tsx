@@ -1,20 +1,45 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthProvider";
 import { useRouter } from "next/navigation";
 
-export default function ProtectedWrapper({ children }: { children: React.ReactNode }) {
-  const { token, loading } = useAuth();
+interface Props {
+  children: React.ReactNode;
+  adminOnly?: boolean;
+}
+
+export default function ProtectedWrapper({
+  children,
+  adminOnly = false,
+}: Props) {
+  const { token, user, loading, isAdmin } = useAuth();
   const router = useRouter();
+  const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    if (!loading && !token) {
-      router.replace("/login");
-    }
-  }, [loading, token, router]);
+    if (loading) return;
 
-  if (loading || !token) return <div className="p-8">Loading...</div>;
+    if (!token) {
+      router.replace("/login");
+      return;
+    }
+
+    if (adminOnly && !isAdmin()) {
+      router.replace("/dashboard");
+      return;
+    }
+
+    setChecking(false);
+  }, [loading, token, adminOnly, router, user, isAdmin]);
+
+  if (loading || checking) {
+    return (
+      <div className="flex min-h-[calc(100vh-73px)] items-center justify-center bg-slate-50">
+        <div className="text-slate-400 text-sm">Checking access...</div>
+      </div>
+    );
+  }
 
   return <>{children}</>;
 }

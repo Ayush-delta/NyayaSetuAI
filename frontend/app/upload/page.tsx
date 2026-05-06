@@ -101,7 +101,7 @@ export default function UploadPage() {
   };
 
   return (
-    <ProtectedWrapper>
+    <ProtectedWrapper adminOnly={true}>
       <div className="flex min-h-[calc(100vh-73px)] flex-col items-center justify-center p-6 sm:p-12 bg-slate-50">
         <div className="w-full max-w-3xl">
           <div className="mb-8 text-center">

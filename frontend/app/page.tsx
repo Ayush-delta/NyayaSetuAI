@@ -3,7 +3,11 @@
 import Link from "next/link";
 import { Scale, ShieldCheck, Zap, ArrowRight, FileText } from "lucide-react";
 
+import { useAuth } from "./context/AuthProvider";
+
 export default function Home() {
+  const { user } = useAuth();
+
   return (
     <div className="flex min-h-screen flex-col bg-slate-50 text-slate-900 selection:bg-blue-500/30">
       
@@ -37,19 +41,31 @@ export default function Home() {
           <div
             className="mt-4 flex flex-col gap-4 sm:flex-row"
           >
-            <Link
-              href="/signup"
-              className="group flex items-center justify-center gap-2 rounded-full bg-blue-700 px-8 py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-700/20 transition-all hover:bg-blue-800"
-            >
-              Get Started for Free
-              <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
-            </Link>
-            <Link
-              href="/login"
-              className="flex items-center justify-center rounded-full border border-slate-300 bg-white px-8 py-3.5 text-sm font-semibold text-slate-700 shadow-sm transition-all hover:bg-slate-50"
-            >
-              Sign In
-            </Link>
+            {user ? (
+              <Link
+                href="/dashboard"
+                className="group flex items-center justify-center gap-2 rounded-full bg-blue-700 px-8 py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-700/20 transition-all hover:bg-blue-800"
+              >
+                Go to Dashboard
+                <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
+              </Link>
+            ) : (
+              <>
+                <Link
+                  href="/signup"
+                  className="group flex items-center justify-center gap-2 rounded-full bg-blue-700 px-8 py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-700/20 transition-all hover:bg-blue-800"
+                >
+                  Get Started for Free
+                  <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
+                </Link>
+                <Link
+                  href="/login"
+                  className="flex items-center justify-center rounded-full border border-slate-300 bg-white px-8 py-3.5 text-sm font-semibold text-slate-700 shadow-sm transition-all hover:bg-slate-50"
+                >
+                  Sign In
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </section>

@@ -2,23 +2,35 @@
 
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { apiLogin, apiSignup, setToken, clearToken, getToken } from "../services/auth";
-
-type User = { email?: string } | null;
+import {
+  apiLogin,
+  setToken,
+  clearToken,
+  getToken,
+  setUser as storeUser,
+  getUser as storedUser,
+  apiSignup,
+  AuthUser,
+} from "../services/auth";
 
 type AuthContextType = {
-  user: User;
+  user: AuthUser | null;
   token: string | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (username: string, password: string) => Promise<void>;
   signup: (email: string, password: string) => Promise<void>;
   logout: () => void;
+  isAdmin: () => boolean;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export default function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User>(null);
+export default function AuthProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [token, setTokenState] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
@@ -26,33 +38,32 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   useEffect(() => {
     try {
       const t = getToken();
-      if (t) {
+      const u = storedUser();
+      if (t && u) {
         setTokenState(t);
-        // try to decode basic email from token payload if present (naive)
-        try {
-          const parts = t.split(".");
-          if (parts.length >= 2) {
-            const payload = JSON.parse(atob(parts[1]));
-            setUser({ email: payload.email });
-          }
-        } catch (e) {
-          setUser(null);
-        }
+        setUser(u);
       }
     } finally {
       setLoading(false);
     }
   }, []);
 
-  async function login(email: string, password: string) {
+  async function login(username: string, password: string) {
     setLoading(true);
     try {
-      const res = await apiLogin(email, password);
+      const res = await apiLogin(username, password);
       if (res?.token) {
         setToken(res.token);
         setTokenState(res.token);
-        setUser(res.user ?? { email });
-        router.push("/");
+        storeUser(res.user);
+        setUser(res.user);
+
+        // Route based on role
+        if (res.user.role === "admin") {
+          router.push("/dashboard");
+        } else {
+          router.push("/dashboard");
+        }
       }
     } finally {
       setLoading(false);
@@ -66,8 +77,9 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       if (res?.token) {
         setToken(res.token);
         setTokenState(res.token);
-        setUser(res.user ?? { email });
-        router.push("/");
+        storeUser(res.user);
+        setUser(res.user);
+        router.push("/dashboard");
       }
     } finally {
       setLoading(false);
@@ -81,8 +93,14 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     router.push("/login");
   }
 
+  function isAdmin(): boolean {
+    return user?.role === "admin";
+  }
+
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, signup, logout }}>
+    <AuthContext.Provider
+      value={{ user, token, loading, login, signup, logout, isAdmin }}
+    >
       {children}
     </AuthContext.Provider>
   );

@@ -4,12 +4,14 @@ import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Loader2, CheckCircle2, ShieldCheck, ShieldAlert, Save, XCircle } from "lucide-react";
 import ProtectedWrapper from "../../components/ProtectedWrapper";
+import { useAuth } from "../../context/AuthProvider";
 import { documentService, ProcessedDocument } from "../../services/documentService";
 
 export default function EditPage() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
+  const { token } = useAuth();
 
   const [document, setDocument] = useState<ProcessedDocument | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -42,7 +44,10 @@ export default function EditPage() {
     try {
       const response = await fetch(`http://127.0.0.1:8000/api/records/${id}/verify`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          ...(token ? { "Authorization": `Bearer ${token}` } : {})
+        },
         body: JSON.stringify({
           status: action,
           reviewer_notes: reviewerNotes || null,
@@ -78,7 +83,10 @@ export default function EditPage() {
     try {
       const response = await fetch(`http://127.0.0.1:8000/api/records/${id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          ...(token ? { "Authorization": `Bearer ${token}` } : {})
+        },
         body: JSON.stringify({
           extracted_data: document.data.extracted_data,
           action_plan: document.data.action_plan,
@@ -124,7 +132,7 @@ export default function EditPage() {
 
   if (!document) {
     return (
-      <ProtectedWrapper>
+      <ProtectedWrapper adminOnly={true}>
         <div className="flex min-h-[calc(100vh-73px)] items-center justify-center bg-slate-50">
           <Loader2 className="animate-spin text-blue-600" size={32} />
         </div>
@@ -152,7 +160,7 @@ export default function EditPage() {
   };
 
   return (
-    <ProtectedWrapper>
+    <ProtectedWrapper adminOnly={true}>
       <div className="min-h-[calc(100vh-73px)] bg-slate-50">
         <div className="mx-auto max-w-5xl p-6 sm:p-12">
           <div className="mb-8 flex flex-col items-start justify-between gap-6 lg:flex-row lg:items-end">

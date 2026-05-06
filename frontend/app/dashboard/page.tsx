@@ -4,12 +4,14 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FileText, Plus, Search, Calendar, ChevronRight, Building2, Clock, CheckCircle2 } from "lucide-react";
 import ProtectedWrapper from "../components/ProtectedWrapper";
+import { useAuth } from "../context/AuthProvider";
 import { documentService, ProcessedDocument } from "../services/documentService";
 
 export default function DashboardPage() {
   const [documents, setDocuments] = useState<ProcessedDocument[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const router = useRouter();
+  const { isAdmin } = useAuth();
 
   useEffect(() => {
     setDocuments(documentService.getAllDocuments());
@@ -40,13 +42,15 @@ export default function DashboardPage() {
                 Displaying only human-verified and approved action plans for execution.
               </p>
             </div>
-            <button
-              onClick={() => router.push("/upload")}
-              className="flex items-center gap-2 rounded-full bg-blue-700 px-6 py-2.5 text-sm font-bold text-white shadow-md transition-transform hover:scale-105 hover:bg-blue-800"
-            >
-              <Plus size={18} />
-              Process New Judgment
-            </button>
+            {isAdmin() && (
+              <button
+                onClick={() => router.push("/upload")}
+                className="flex items-center gap-2 rounded-full bg-blue-700 px-6 py-2.5 text-sm font-bold text-white shadow-md transition-transform hover:scale-105 hover:bg-blue-800"
+              >
+                <Plus size={18} />
+                Process New Judgment
+              </button>
+            )}
           </div>
 
           {/* Search Bar */}
@@ -66,7 +70,7 @@ export default function DashboardPage() {
             const pendingDocs = documents.filter((doc) =>
               ["pending", "edited"].includes(doc.data.verification_status)
             );
-            if (pendingDocs.length === 0) return null;
+            if (pendingDocs.length === 0 || !isAdmin()) return null;
             return (
               <div className="mb-12">
                 <h2 className="mb-4 flex items-center gap-2 text-xl font-bold text-slate-800">

@@ -58,7 +58,15 @@ export default function CaseDetailsPage() {
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-slate-900">
-                  {case_details.petitioner} <span className="text-slate-400 font-normal">vs.</span> {case_details.respondent}
+                  {case_details.petitioner && case_details.petitioner !== "null" && case_details.respondent && case_details.respondent !== "null" ? (
+                    <>
+                      {case_details.petitioner} <span className="text-slate-400 font-normal">vs.</span> {case_details.respondent}
+                    </>
+                  ) : (
+                    case_details.petitioner !== "null" ? case_details.petitioner : 
+                    case_details.respondent !== "null" ? case_details.respondent : 
+                    "Case Parties Not Extracted"
+                  )}
                 </h1>
                 <p className="text-slate-500 font-medium mt-1">
                   {case_details.case_number} • {case_details.court_name}
