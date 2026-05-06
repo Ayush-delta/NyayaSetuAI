@@ -2,7 +2,8 @@
 
 // Real auth service — connects to FastAPI backend /api/auth/login
 
-const BASE = "http://127.0.0.1:8000/api/auth";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+const BASE = `${API_URL}/api/auth`;
 
 export type AuthUser = {
   username: string;

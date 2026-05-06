@@ -42,7 +42,8 @@ export default function EditPage() {
     };
 
     try {
-      const response = await fetch(`http://127.0.0.1:8000/api/records/${id}/verify`, {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+      const response = await fetch(`${API_URL}/api/records/${id}/verify`, {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
@@ -81,7 +82,8 @@ export default function EditPage() {
     setSaveMessage("");
 
     try {
-      const response = await fetch(`http://127.0.0.1:8000/api/records/${id}`, {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+      const response = await fetch(`${API_URL}/api/records/${id}`, {
         method: "PUT",
         headers: { 
           "Content-Type": "application/json",

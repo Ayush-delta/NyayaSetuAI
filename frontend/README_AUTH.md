@@ -25,3 +25,4 @@ npm run dev
   - Authentication token is stored in `localStorage` key `nyaya_token` and mirrored to a cookie for middleware route protection.
   - Protected routes: `/upload`, `/dashboard`, `/query`, `/admin`.
   - Backend base URL used: `http://localhost:8000`.
+  - For production, set `NEXT_PUBLIC_API_URL` in `.env` to your backend's live URL.
