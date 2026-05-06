@@ -6,10 +6,7 @@ groq==0.13.1
 python-dotenv==1.0.1
 PyMuPDF==1.25.1
 pytesseract==0.3.13
-# CPU-only torch for Render Free Tier (saves 600MB+ memory and disk)
---extra-index-url https://download.pytorch.org/whl/cpu
-torch==2.2.2+cpu
-sentence-transformers==3.0.1
+# No local AI models needed - using Groq API for everything
 Pillow==10.3.0
 sqlalchemy==2.0.36
 psycopg2-binary==2.9.10

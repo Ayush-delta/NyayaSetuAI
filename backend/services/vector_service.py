@@ -1,21 +1,26 @@
 import os
-from sentence_transformers import SentenceTransformer
+from groq import Groq
 from services.pdf_processor import chunk_text
 from services.storage_service import _get_client
 from dotenv import load_dotenv
 
 load_dotenv()
 
-# ─── Embedding Model (Lazy Loaded) ────────────────────────────────────────
-_embedder = None
-
-def get_embedder():
-    global _embedder
-    if _embedder is None:
-        print("🚀 Loading lightweight embedding model...")
-        # We use the small model to keep memory usage low
-        _embedder = SentenceTransformer("all-MiniLM-L6-v2", device="cpu")
-    return _embedder
+# ─── Groq Cloud Embeddings (Zero RAM Usage) ──────────────────────────────
+def get_embeddings_from_groq(texts: list[str]) -> list[list[float]]:
+    """
+    Calls Groq's API to get embeddings. 
+    This uses 0MB of your server's RAM!
+    """
+    client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+    
+    # Groq currently supports nomic-embed-text-v1.5
+    response = client.embeddings.create(
+        model="nomic-embed-text-v1.5",
+        input=texts
+    )
+    
+    return [item.embedding for item in response.data]
 
 
 def create_vector_store(record_id: str, full_text: str) -> dict:
@@ -30,7 +35,7 @@ def create_vector_store(record_id: str, full_text: str) -> dict:
         return {"chunks": 0, "namespace": None}
 
     # Step 2: Embed chunks
-    embeddings = get_embedder().encode(chunks, show_progress_bar=False).tolist()
+    embeddings = get_embeddings_from_groq(chunks)
 
     # Step 3: Connect to Supabase
     supabase = _get_client()
@@ -65,7 +70,7 @@ def retrieve_relevant_chunks(record_id: str, query: str, top_k: int = 5) -> list
     pgvector table using the match_document_chunks RPC function.
     """
     # Embed the query
-    query_embedding = get_embedder().encode(query).tolist()
+    query_embedding = get_embeddings_from_groq([query])[0]
     
     supabase = _get_client()
 
