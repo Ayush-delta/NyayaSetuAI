@@ -14,15 +14,6 @@ from fastapi import Depends
 router = APIRouter(prefix="/api", tags=["upload"])
 
 @router.post("/upload")
-async def upload_judgment(
-    file: UploadFile = File(...),
-    current_user: dict = Depends(require_admin)  # ← add this
-):
-    ...
-
-router = APIRouter(prefix="/api", tags=["upload"])
-
-@router.post("/upload")
 async def upload_judgment(file: UploadFile = File(...)):
     start_time = time.time()
     

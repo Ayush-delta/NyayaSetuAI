@@ -18,9 +18,15 @@ async def on_startup():
     except Exception as e:
         print(f"❌ Database initialization failed: {e}")
 
+origins = [
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "https://nyaya-setu-ai.vercel.app",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
