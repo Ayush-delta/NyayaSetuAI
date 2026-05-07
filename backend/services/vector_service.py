@@ -6,21 +6,30 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# ─── Groq Cloud Embeddings (Zero RAM Usage) ──────────────────────────────
-def get_embeddings_from_groq(texts: list[str]) -> list[list[float]]:
+import requests
+
+# ─── Hugging Face Embeddings (Zero RAM Usage) ─────────────────────────────
+def get_embeddings(texts: list[str]) -> list[list[float]]:
     """
-    Calls Groq's API to get embeddings. 
+    Calls Hugging Face's Inference API to get embeddings.
     This uses 0MB of your server's RAM!
     """
-    client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+    # Using a 768-dimension model to match existing database schema
+    model_id = "sentence-transformers/all-mpnet-base-v2"
+    api_url = f"https://api-inference.huggingface.co/pipeline/feature-extraction/{model_id}"
     
-    # Groq currently supports nomic-embed-text-v1.5
-    response = client.embeddings.create(
-        model="nomic-embed-text-v1.5",
-        input=texts
-    )
-    
-    return [item.embedding for item in response.data]
+    # Optional: You can add an HUGGINGFACE_API_KEY to .env for higher rate limits
+    hf_token = os.getenv("HUGGINGFACE_API_KEY", "")
+    headers = {"Authorization": f"Bearer {hf_token}"} if hf_token else {}
+
+    try:
+        response = requests.post(api_url, headers=headers, json={"inputs": texts, "options": {"wait_for_model": True}})
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        print(f"❌ Embedding error: {e}")
+        # Fallback: Return zero vectors if API fails (768 dimensions)
+        return [[0.0] * 768 for _ in texts]
 
 
 def create_vector_store(record_id: str, full_text: str) -> dict:
@@ -35,7 +44,7 @@ def create_vector_store(record_id: str, full_text: str) -> dict:
         return {"chunks": 0, "namespace": None}
 
     # Step 2: Embed chunks
-    embeddings = get_embeddings_from_groq(chunks)
+    embeddings = get_embeddings(chunks)
 
     # Step 3: Connect to Supabase
     supabase = _get_client()
@@ -70,7 +79,7 @@ def retrieve_relevant_chunks(record_id: str, query: str, top_k: int = 5) -> list
     pgvector table using the match_document_chunks RPC function.
     """
     # Embed the query
-    query_embedding = get_embeddings_from_groq([query])[0]
+    query_embedding = get_embeddings([query])[0]
     
     supabase = _get_client()
 
