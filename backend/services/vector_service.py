@@ -16,7 +16,7 @@ def get_embeddings(texts: list[str]) -> list[list[float]]:
     """
     # Using a 768-dimension model to match existing database schema
     model_id = "sentence-transformers/all-mpnet-base-v2"
-    api_url = f"https://api-inference.huggingface.co/pipeline/feature-extraction/{model_id}"
+    api_url = f"https://api-inference.huggingface.co/models/{model_id}"
     
     # Optional: You can add an HUGGINGFACE_API_KEY to .env for higher rate limits
     hf_token = os.getenv("HUGGINGFACE_API_KEY", "")
