@@ -14,22 +14,28 @@ def get_embeddings(texts: list[str]) -> list[list[float]]:
     Calls Hugging Face's Inference API to get embeddings.
     This uses 0MB of your server's RAM!
     """
-    # Using a 768-dimension model to match existing database schema
-    model_id = "sentence-transformers/all-mpnet-base-v2"
-    api_url = f"https://api-inference.huggingface.co/models/{model_id}"
+    # Switching back to 384 dimensions as required by your Supabase schema
+    model_id = "sentence-transformers/all-MiniLM-L6-v2"
+    api_url = f"https://api-inference.huggingface.co/pipeline/feature-extraction/{model_id}"
     
     # Optional: You can add an HUGGINGFACE_API_KEY to .env for higher rate limits
     hf_token = os.getenv("HUGGINGFACE_API_KEY", "")
     headers = {"Authorization": f"Bearer {hf_token}"} if hf_token else {}
 
     try:
-        response = requests.post(api_url, headers=headers, json={"inputs": texts, "options": {"wait_for_model": True}})
+        # We use a POST request to the feature-extraction pipeline
+        response = requests.post(
+            api_url, 
+            headers=headers, 
+            json={"inputs": texts, "options": {"wait_for_model": True}},
+            timeout=20
+        )
         response.raise_for_status()
         return response.json()
     except Exception as e:
         print(f"❌ Embedding error: {e}")
-        # Fallback: Return zero vectors if API fails (768 dimensions)
-        return [[0.0] * 768 for _ in texts]
+        # Fallback: Return zero vectors if API fails (384 dimensions)
+        return [[0.0] * 384 for _ in texts]
 
 
 def create_vector_store(record_id: str, full_text: str) -> dict:
