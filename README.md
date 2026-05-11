@@ -1,4 +1,4 @@
-# NyayaSetuAI ⚖️🤖
+NyayaSetuAI ⚖️🤖
 
 > AI-powered Legal Intelligence Platform that transforms unstructured court judgments into verified, actionable compliance and decision-support plans.
 
