@@ -1,4 +1,4 @@
-[improved_nyayasetukai_readme.md](https://github.com/user-attachments/files/27600484/improved_nyayasetukai_readme.md)[Uploading improved_n# NyayaSetuAI ⚖️🤖
+NyayaSetuAI ⚖️🤖
 
 > AI-powered Legal Intelligence Platform that transforms unstructured court judgments into verified, actionable compliance and decision-support plans.
 
@@ -366,6 +366,4 @@ If you found this project useful:
 
 # 👨‍💻 Developed By
 
-Team NyayaSetuAI
-
-yayasetukai_readme.md…]()
+Team Justice Stack
