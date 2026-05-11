@@ -1,129 +1,371 @@
-# NyayaSetuAI
+[improved_nyayasetukai_readme.md](https://github.com/user-attachments/files/27600484/improved_nyayasetukai_readme.md)[Uploading improved_n# NyayaSetuAI ⚖️🤖
 
-NyayaSetuAI is a full-stack, AI-powered legal document intelligence system built for government departments. It automatically processes unstructured legal judgments (PDFs), extracts critical information, and generates structured, prioritized action plans for compliance and appeal analysis.
+> AI-powered Legal Intelligence Platform that transforms unstructured court judgments into verified, actionable compliance and decision-support plans.
 
-This repository contains both the **Next.js Frontend** and the **FastAPI Backend**.
-
----
-
-## 🚀 Architecture & Data Flow
-
-1. **Upload:** A user (Admin) uploads a court judgment PDF via the Next.js frontend.
-2. **Storage:** The FastAPI backend securely uploads the raw PDF to **Supabase Storage**.
-3. **Extraction:** **PyMuPDF** (and **Tesseract OCR** for scanned documents) extracts the raw text. Rule-based regex logic runs a preliminary extraction for highly structured fields (like Judge names).
-4. **Vectorization (RAG):** The text is chunked, embedded using **sentence-transformers**, and stored in **Supabase pgvector** to isolate the most relevant legal context.
-5. **AI Processing:** The contextualized text is sent to the **Groq API (LLaMA 3.1)** to:
-   - Extract case details, dates, and parties.
-   - Generate a structured "Action Plan" indicating compliance requirements or appeal risks.
-   - Assign a self-assessed Confidence Score (0.0 to 1.0) to every extracted field.
-6. **Persistence:** The structured JSON is validated via **Pydantic** and stored in a **PostgreSQL** database (via SQLAlchemy).
-7. **Human-in-the-Loop:** The data is returned to the frontend where an Admin verifies the AI's extraction against the raw source text snippets. Once approved, the document becomes visible to Officers on the Dashboard.
+![Next.js](https://img.shields.io/badge/Frontend-Next.js-black)
+![FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688)
+![PostgreSQL](https://img.shields.io/badge/Database-PostgreSQL-blue)
+![Supabase](https://img.shields.io/badge/VectorDB-pgvector-green)
+![License](https://img.shields.io/badge/License-MIT-yellow)
 
 ---
 
-## 💻 Tech Stack
+## 📌 Overview
 
-### Frontend (`/frontend`)
-*   **Framework:** Next.js (App Router)
-*   **Language:** TypeScript
-*   **Styling:** Tailwind CSS
-*   **State Management:** React Hooks & Context API
-*   **Authentication:** JWT-based Role Access Control
+Government departments and legal officers often struggle with:
 
-### Backend (`/backend`)
-*   **Framework:** FastAPI (Python)
-*   **Database:** PostgreSQL (hosted on Supabase)
-*   **Vector DB:** Supabase pgvector
-*   **Cloud Storage:** Supabase Storage
-*   **LLM Provider:** Groq (`llama-3.1-8b-instant`)
-*   **Embeddings:** SentenceTransformers (`all-MiniLM-L6-v2`)
-*   **PDF Parsing:** PyMuPDF (`fitz`) & pytesseract
+- Lengthy court judgments (50–200 pages)
+- Complex legal terminology
+- Scanned and unstructured PDF files
+- Hidden compliance directives and deadlines
+- Slow and error-prone manual analysis
+
+**NyayaSetuAI** solves this problem by converting legal judgments into:
+
+✅ Structured case information  
+✅ AI-generated compliance insights  
+✅ Department-wise action plans  
+✅ Deadline tracking and monitoring  
+✅ Human-verified decision support workflows  
 
 ---
 
-## ⚙️ Setup & Installation (Local Development)
+# ✨ Key Features
 
-### Prerequisites
-- Node.js (v18+)
-- Python (3.10+)
-- Tesseract OCR installed locally
-- API Keys for Groq and Supabase
+## 📄 Intelligent PDF Processing
+- Upload scanned or digital court judgments
+- OCR support using Tesseract
+- Extract text from complex legal documents
 
-### 1. Backend Setup
+## 🧠 AI-Powered Legal Intelligence
+- Llama 3 powered legal analysis
+- Semantic retrieval using Supabase pgvector
+- Context-aware legal information extraction
+- Action-plan generation from judgments
+
+## ⚡ RAG Pipeline
+- Document chunking
+- Vector embeddings generation
+- Semantic similarity search
+- Contextual legal reasoning
+
+## 👥 Human-in-the-Loop Verification
+- Admin review workflow
+- AI confidence scoring
+- Human-approved outputs only
+- Editable extraction verification
+
+## 📊 Decision Support Dashboard
+- Department-wise action plans
+- Deadline tracking
+- Compliance monitoring
+- Appeal risk analysis
+
+## 🔐 Enterprise Features
+- JWT Authentication
+- Role-based access control (RBAC)
+- Admin and Officer dashboards
+- Secure PDF storage
+
+---
+
+# 🏗️ System Architecture
+
+```text
+             ┌───────────────────┐
+             │   External Users  │
+             └─────────┬─────────┘
+                       │
+                       ▼
+             ┌───────────────────┐
+             │ Next.js Frontend  │
+             └─────────┬─────────┘
+                       │ REST API
+                       ▼
+             ┌───────────────────┐
+             │ FastAPI Backend   │
+             └─────────┬─────────┘
+                       │
+       ┌───────────────┼────────────────┐
+       ▼               ▼                ▼
+┌────────────┐ ┌──────────────┐ ┌─────────────┐
+│ Llama 3 AI │ │ PostgreSQL   │ │ Supabase    │
+│  (Groq)    │ │ + pgvector   │ │ Storage     │
+└────────────┘ └──────────────┘ └─────────────┘
+```
+
+---
+
+# 🔄 Processing Pipeline
+
+```text
+Upload PDF
+     ↓
+OCR + Text Extraction
+     ↓
+Chunking & Embeddings
+     ↓
+pgvector Semantic Retrieval
+     ↓
+Llama 3 Legal Analysis
+     ↓
+Action Plan Generation
+     ↓
+Human Verification
+     ↓
+Dashboard & Compliance Tracking
+```
+
+---
+
+# 🧠 How the AI Works
+
+### 1. PDF Upload
+Users upload legal judgments or petitions.
+
+### 2. OCR & Parsing
+- PyMuPDF extracts text from digital PDFs
+- Tesseract OCR handles scanned documents
+
+### 3. Semantic Retrieval
+- Text is chunked into smaller contexts
+- Embeddings are generated using SentenceTransformers
+- Stored inside Supabase pgvector
+- Relevant legal context retrieved dynamically
+
+### 4. LLM Processing
+Llama 3 analyzes retrieved legal context to:
+- Extract orders
+- Identify authorities
+- Detect deadlines
+- Generate compliance actions
+- Evaluate appeal risks
+
+### 5. Human Verification
+Admins verify AI-generated outputs before approval.
+
+### 6. Dashboard Output
+Verified action plans are displayed department-wise.
+
+---
+
+# 🛠️ Tech Stack
+
+| Category | Technology |
+|---|---|
+| Frontend | Next.js (App Router), TypeScript, Tailwind CSS |
+| Backend | FastAPI, Python |
+| AI Model | Llama 3 (Groq API) |
+| Vector Search | Supabase pgvector |
+| Database | PostgreSQL |
+| OCR | Tesseract OCR |
+| PDF Processing | PyMuPDF |
+| Authentication | JWT Authentication |
+| Embeddings | SentenceTransformers |
+| Storage | Supabase Storage |
+
+---
+
+# 📂 Project Structure
+
+```bash
+NyayaSetuAI/
+│
+├── frontend/                 # Next.js frontend
+│   ├── app/
+│   ├── components/
+│   ├── context/
+│   └── public/
+│
+├── backend/                  # FastAPI backend
+│   ├── routers/
+│   ├── services/
+│   ├── models/
+│   ├── schemas/
+│   ├── database/
+│   └── utils/
+│
+├── README.md
+└── docker-compose.yml
+```
+
+---
+
+# ⚙️ Local Setup
+
+## 📋 Prerequisites
+
+- Node.js v18+
+- Python 3.10+
+- PostgreSQL
+- Tesseract OCR
+- Supabase Project
+- Groq API Key
+
+---
+
+# 🚀 Backend Setup
+
 ```bash
 cd backend
+
 python -m venv venv
-# Activate virtual environment (Windows: venv\Scripts\activate, Mac/Linux: source venv/bin/activate)
+```
+
+### Activate Virtual Environment
+
+#### Windows
+```bash
+venv\Scripts\activate
+```
+
+#### Linux / macOS
+```bash
+source venv/bin/activate
+```
+
+### Install Dependencies
+
+```bash
 pip install -r requirements.txt
 ```
 
-**Create a `.env` file in the `backend/` folder:**
+### Create `.env`
+
 ```env
 GROQ_API_KEY=your_groq_key
-TESSERACT_PATH=C:\Program Files\Tesseract-OCR\tesseract.exe
-SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_URL=your_supabase_url
 SUPABASE_KEY=your_supabase_key
-DATABASE_URL=postgresql://user:password@aws-0-pooler.supabase.com:5432/postgres
-
-JWT_SECRET_KEY=super_secret_key
+DATABASE_URL=your_database_url
+JWT_SECRET_KEY=your_secret
 JWT_ALGORITHM=HS256
 JWT_EXPIRE_MINUTES=480
-
-ADMIN_USERNAME=admin
-ADMIN_PASSWORD=admin123
-OFFICER_USERNAME=officer
-OFFICER_PASSWORD=officer123
 ```
 
-**Start the Backend Server:**
+### Run Backend
+
 ```bash
-python -m uvicorn main:app --reload --port 8000
+uvicorn main:app --reload --port 8000
 ```
 
-### 2. Frontend Setup
+Backend runs on:
+
+```text
+http://localhost:8000
+```
+
+---
+
+# 🌐 Frontend Setup
+
 ```bash
 cd frontend
 npm install --legacy-peer-deps
-```
-
-**Start the Frontend Development Server:**
-```bash
 npm run dev
 ```
-Navigate to `http://localhost:3000`.
+
+Frontend runs on:
+
+```text
+http://localhost:3000
+```
 
 ---
 
-## 🌍 Deployment Process Steps
+# 🔐 Authentication & Roles
 
-### 1. Database Preparation (Supabase)
-1. Ensure your PostgreSQL database has the `pgvector` extension enabled.
-2. Create the necessary storage buckets in Supabase for holding PDFs.
-
-### 2. Backend Deployment (Render / Railway)
-1. Create a new Web Service on Render or Railway, connected to your GitHub repository.
-2. Set the Root Directory to `backend`.
-3. Set the Build Command: `pip install -r requirements.txt`
-   *(Note: You may need to use a Dockerfile if Tesseract OCR needs to be installed on the host system).*
-4. Set the Start Command: `uvicorn main:app --host 0.0.0.0 --port $PORT`
-5. Add all the Environment Variables from your local `.env` file into the deployment dashboard.
-6. Once deployed, note the live API URL (e.g., `https://nyayasetu-api.onrender.com`).
-
-### 3. Frontend Deployment (Vercel)
-1. Create a new project on Vercel and import your repository.
-2. Set the Root Directory to `frontend`.
-3. Override the default Build Command if necessary (Next.js defaults are usually fine).
-4. Under Environment Variables, add:
-   - `NEXT_PUBLIC_API_URL`: Set this to your live backend URL (e.g., `https://nyayasetu-api.onrender.com/api`).
-   *(Note: Ensure your frontend `services/auth.ts` and other service files use this environment variable instead of `localhost` in production)*.
-5. Click **Deploy**.
+| Role | Permissions |
+|---|---|
+| Admin | Upload PDFs, verify AI outputs, manage users |
+| Officer | View approved action plans and compliance data |
 
 ---
 
-## 📋 Core Features
+# 📈 Core Advantages
 
-- **Role-Based Access Control:** Strict JWT separation between `Admin` (Upload, Review, Verify) and `Officer` (View-only Dashboard). Signups automatically default to the Officer role.
-- **Duplicate Detection:** Prevents database constraint violations by hashing PDFs before processing.
-- **Smart Chunking & pgvector:** Bypasses LLM context-window limits by embedding text and retrieving the exact relevant chunks via Supabase pgvector.
-- **Hybrid Extraction Pipeline:** Merges deterministic RegEx rules with LLM intelligence to guarantee accurate Judge Names and Dates.
-- **Confidence Scoring & HITL:** The AI self-evaluates its extraction accuracy, directing human reviewers (Admins) to manually verify low-confidence fields before saving to the production dashboard.
+✅ Faster legal analysis  
+✅ Reduced manual effort  
+✅ Structured government workflows  
+✅ AI-assisted compliance management  
+✅ Human-verified accuracy  
+✅ Scalable Legal AI architecture  
+
+---
+
+# ⚠️ Challenges
+
+- Complex legal terminology
+- OCR accuracy for low-quality scans
+- Hallucination risks in LLM outputs
+- Human verification dependency
+
+---
+
+# 🔮 Future Improvements
+
+- Multilingual judgment analysis
+- Real-time court integration APIs
+- Fine-tuned legal LLMs
+- Voice-based legal assistant
+- AI-powered legal search engine
+- Automated compliance notifications
+- Analytics dashboard with insights
+
+---
+
+# 🧪 Sample Use Cases
+
+## Government Departments
+Track compliance requirements from High Court and Supreme Court judgments.
+
+## Legal Officers
+Quickly identify deadlines, directives, and responsible authorities.
+
+## Administrative Bodies
+Monitor implementation progress across departments.
+
+## Judicial Analytics
+Generate structured legal intelligence from unstructured judgments.
+
+---
+
+# 📸 Screenshots
+
+## Upload Portal
+_Add screenshot here_
+
+## Admin Verification Dashboard
+_Add screenshot here_
+
+## Decision Support Dashboard
+_Add screenshot here_
+
+---
+
+# 🤝 Contributors
+
+Built with ❤️ for LegalTech innovation and AI-powered governance.
+
+---
+
+# 📜 License
+
+This project is licensed under the MIT License.
+
+---
+
+# ⭐ Support
+
+If you found this project useful:
+
+- Star the repository ⭐
+- Fork the project 🍴
+- Contribute improvements 🚀
+
+---
+
+# 👨‍💻 Developed By
+
+Team NyayaSetuAI
+
+yayasetukai_readme.md…]()
