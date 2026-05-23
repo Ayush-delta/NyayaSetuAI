@@ -170,6 +170,29 @@ Verified action plans are displayed department-wise.
 
 ---
 
+## 🎯 Evaluation Criteria Mapping
+
+| Criteria | Our Implementation |
+|---|---|
+| Accuracy of extraction | Hybrid LLM + rule-based regex, 11/12 court formats covered |
+| Quality of action plan | Llama 3 + compliance/appeal classification with priority scoring |
+| Human verification effectiveness | Mandatory Approve/Edit/Reject with confidence scores + source highlights |
+| Dashboard clarity | Role-based access, department-wise view, deadline tracking |
+
+---
+
+## 🌐 Live Demo
+**Frontend:** https://nyaya-setu-ai.vercel.app
+**Demo credentials:**
+- Admin: username=`admin` password=`admin123`
+- Officer: username=`officer` password=`officer123`
+
+**Sample judgment for testing:**
+Download any Karnataka HC judgment from https://judgments.ecourts.gov.in
+
+---
+
+
 # 📂 Project Structure
 
 ```bash
@@ -333,16 +356,22 @@ Generate structured legal intelligence from unstructured judgments.
 
 ---
 
-# 📸 Screenshots
+## 📸 Screenshots
 
-## Upload Portal
-_Add screenshot here_
+### Upload Portal
+![Upload](docs/screenshots/upload.png)
 
-## Admin Verification Dashboard
-_Add screenshot here_
+### AI Review Screen  
+![Review](docs/screenshots/review.png)
 
-## Decision Support Dashboard
-_Add screenshot here_
+### Decision Support Dashboard
+![Dashboard](docs/screenshots/dashboard.png)
+
+### Admin Control Center
+![Admin](docs/screenshots/admin.png)
+
+### Confidence Scoring
+![Confidence](docs/screenshots/confidence.png)
 
 ---
 
