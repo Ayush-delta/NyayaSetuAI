@@ -358,20 +358,18 @@ Generate structured legal intelligence from unstructured judgments.
 
 ## 📸 Screenshots
 
+### Frontend
+
+![Frontend](docs/screenshots/front.png)
+
 ### Upload Portal
 ![Upload](docs/screenshots/upload.png)
-
-### AI Review Screen  
-![Review](docs/screenshots/review.png)
 
 ### Decision Support Dashboard
 ![Dashboard](docs/screenshots/dashboard.png)
 
 ### Admin Control Center
 ![Admin](docs/screenshots/admin.png)
-
-### Confidence Scoring
-![Confidence](docs/screenshots/confidence.png)
 
 ---
 
