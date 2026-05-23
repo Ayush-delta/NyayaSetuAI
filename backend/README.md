@@ -71,3 +71,32 @@ uvicorn main:app --reload --port 8000
 Once the server is running, you can access the interactive API documentation and test endpoints directly from your browser:
 * **Swagger UI:** [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
 * **ReDoc:** [http://127.0.0.1:8000/redoc](http://127.0.0.1:8000/redoc)
+
+---
+
+## 💾 Core Services & Data Pipeline
+
+1. **PDF Processing Service:** Handles extraction of digital and scanned PDFs. Scanned PDFs are converted to high-resolution page images and passed to **Tesseract OCR** using the `pytesseract` library.
+2. **Embeddings & Vector Store:** Chunks extracted text and converts chunks into 384-dimensional vector embeddings using the `all-MiniLM-L6-v2` SentenceTransformers model. These are stored locally using a **FAISS** vector database for rapid retrieval (RAG).
+3. **AI Reasoning Service (Llama 3):** Takes search-retrieved legal chunks and queries Groq API's Llama 3 model to generate structured case metadata, identify departments, parse compliance instructions, detect deadlines, and output priority scores.
+
+---
+
+## 🎯 Evaluation Criteria Mapping
+
+| Criteria | Backend Implementation |
+|---|---|
+| **Accuracy of extraction** | Hybrid rule-based regex parsing for judges & dates + Llama 3 prompt-engineering for unstructured pages |
+| **Quality of action plan** | Dynamic prompts categorizing compliance duties, appeals risks, and deadlines |
+| **Human-in-the-loop** | APIs allowing Admins to edit/update JSON structures and approve entries before they are finalized |
+| **Database Integration** | PostgreSQL schema on Supabase tracking status (`Pending`, `Approved`, `Rejected`), metadata, and deadlines |
+
+---
+
+## 🌐 Live API & Demo Credentials
+
+* **Live Demo Frontend:** [https://nyaya-setu-ai.vercel.app](https://nyaya-setu-ai.vercel.app)
+* **Demo Accounts:**
+  * **Admin:** Username: `admin` | Password: `admin123`
+  * **Officer:** Username: `officer` | Password: `officer123`
+
