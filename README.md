@@ -225,7 +225,7 @@ NyayaSetuAI/
 - Node.js v18+
 - Python 3.10+
 - PostgreSQL
-- Tesseract OCR
+- Tesseract OCR (Download Windows installer from [UB-Mannheim Wiki](https://github.com/UB-Mannheim/tesseract/wiki) and install to default path: `C:\Program Files\Tesseract-OCR\`)
 - Supabase Project
 - Groq API Key
 
